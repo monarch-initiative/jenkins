@@ -349,9 +349,7 @@ pipeline {
                                 venv/bin/pip install requests markdown
                                 venv/bin/python3 ./monarch/monarch-data-diff.py --config ./conf/monarch-qc.json --threshold 2 --out ./data-diff-"${timestamp}"
 
-                                # grep SEVERE /var/lib/jenkins/jobs/monarch-data-pipeline/builds/$BUILD_NUMBER/log | perl -e '$pos; while(<>){chomp; if ($_ =~ m/.*clique.*/){ $pos = 1;} elsif ($pos == 1){ $_ =~ s/SEVERE: //; print "\\n$_"; $pos=2;} elsif($pos == 2){ $_ =~ s/SEVERE: //; print "\\t$_";}}' | sed '/^$/d' > ./data-diff-"${timestamp}"/clique-warnings.tsv
-
-                                grep SEVERE /var/lib/jenkins/jobs/monarch-data-pipeline/builds/58/log | perl -e '$pos; while(<>){chomp; if ($_ =~ m/.*clique.*/){ $pos = 1;} elsif ($pos == 1){ $_ =~ s/SEVERE: //; print "\\n$_"; $pos=2;} elsif($pos == 2){ $_ =~ s/SEVERE: //; print "\\t$_";}}' | sed '/^$/d' > ./data-diff-"${timestamp}"/clique-warnings.tsv
+                                grep SEVERE /var/lib/jenkins/jobs/monarch-data-pipeline/builds/$BUILD_NUMBER/log | perl -e '$pos; while(<>){chomp; if ($_ =~ m/.*clique.*/){ $pos = 1;} elsif ($pos == 1){ $_ =~ s/SEVERE: //; print "\\n$_"; $pos=2;} elsif($pos == 2){ $_ =~ s/SEVERE: //; print "\\t$_";}}' | sed '/^$/d' > ./data-diff-"${timestamp}"/clique-warnings.tsv
 
                                 scp -r ./$directory monarch@$MONARCH_DATA_FS:/var/www/data/qc/
                             '''
