@@ -39,34 +39,40 @@ pipeline {
                 parallel(
                     "load scigraph data on dev": {
                         dir('./load-scigraph-data-on-dev') {
-                            sh 'sudo rm -rf ./data-graph/'
-                            deleteDir()}
+                            sh 'sudo rm -rf ./data/'
+                            deleteDir()
+                        }
                         dir('./load-scigraph-data-on-dev') {
+                            git(
+                                url: 'https://github.com/monarch-initiative/scigraph-docker',
+                                branch: 'master'
+                            )
                             sh '''
+                                git clone https://github.com/monarch-initiative/monarch-cypher-queries.git monarch-cypher-queries
+                                
+                                # Generate config files
+                                ./conf/build-load-conf.sh
+                                
+                                cd ./data/
+                                wget -r -l1 -nH --no-parent -R "index.html*" https://archive.monarchinitiative.org/201902/ttl/
+                                wget -r -l1 -nH --no-parent -R "index.html*" https://archive.monarchinitiative.org/201902/owl/
+                                cd -
+                                
                                 SCIGRAPH_DIR=$WORKSPACE/load-scigraph-data-on-dev
                                 
-                                # Get and install the queries and curies
-                                git clone https://github.com/monarch-initiative/dipper.git dipper
-                                git clone https://github.com/monarch-initiative/monarch-cypher-queries.git monarch-cypher-queries
-                                git clone https://github.com/SciGraph/SciGraph.git SciGraph
-
-                                cd SciGraph && mvn clean install -DskipTests
-                                cd ../dipper/maven && mvn clean install
-                                cd ../../monarch-cypher-queries && mvn clean install && cd ..
-
-                                # package docker images
-                                git clone https://github.com/monarch-initiative/SciGraph-docker-monarch-data.git SciGraph-docker-monarch-data
-                                cd SciGraph-docker-monarch-data && mvn clean package
-
-                                # fire the load
-                                docker run -v $SCIGRAPH_DIR/data-graph:/scigraph scigraph-load-monarch
+                                docker build -t scigraph-data .
+                                
+                                docker run \\
+                                    -v $SCIGRAPH_DIR/data:/data \\
+                                    -v $SCIGRAPH_DIR/conf:/scigraph/conf \\
+                                    scigraph-data load-scigraph monarchLoadConfiguration.yaml
 
                                 # Change ownership from root to jenkins
-                                sudo chown -R jenkins:jenkins $SCIGRAPH_DIR/data-graph
+                                sudo chown -R jenkins:jenkins $SCIGRAPH_DIR/data
 
                                 # move graph to expected neo4j dir structure
-                                mkdir -p $SCIGRAPH_DIR/data-graph/databases/graph.db
-                                mv $SCIGRAPH_DIR/data-graph/graph/* $SCIGRAPH_DIR/data-graph/databases/graph.db/
+                                mkdir -p $SCIGRAPH_DIR/data/databases/graph.db
+                                mv $SCIGRAPH_DIR/data/graph/* $SCIGRAPH_DIR/data/databases/graph.db/
                                 cp /opt/neo4j/conf/data-graph.conf /opt/neo4j/conf/neo4j.conf
 
                                 # Start neo4j
@@ -83,10 +89,10 @@ pipeline {
                                 /opt/neo4j/bin/neo4j stop
 
                                 # Move data back
-                                mv $SCIGRAPH_DIR/data-graph/databases/graph.db/* $SCIGRAPH_DIR/data-graph/graph/
+                                mv $SCIGRAPH_DIR/data/databases/graph.db/* $SCIGRAPH_DIR/data/graph/
 
                                 # creating the archive
-                                cd $SCIGRAPH_DIR/data-graph && tar czfv scigraph.tgz graph/
+                                cd $SCIGRAPH_DIR/data && tar czfv scigraph.tgz graph/
 
                                 # stop the service
                                 ssh monarch@$SCIGRAPH_DATA_DEV "docker stop scigraph-services"
@@ -97,57 +103,56 @@ pipeline {
                                 ssh monarch@$SCIGRAPH_DATA_DEV "sudo rm -rf /var/scigraph/graph"
 
                                 # copy the graph over and expand it
-                                scp $SCIGRAPH_DIR/data-graph/scigraph.tgz monarch@$SCIGRAPH_DATA_DEV:~
+                                scp $SCIGRAPH_DIR/data/scigraph.tgz monarch@$SCIGRAPH_DATA_DEV:~
                                 ssh monarch@$SCIGRAPH_DATA_DEV "sudo mv ~/scigraph.tgz /var/www/data"
                                 ssh monarch@$SCIGRAPH_DATA_DEV "cd /var/scigraph && sudo tar xzfv /var/www/data/scigraph.tgz"
 
-                                # restart the service
-                                ssh monarch@$SCIGRAPH_DATA_DEV "docker run --restart=unless-stopped -v /var/scigraph:/scigraph -v /tmp/.X11-unix:/tmp/.X11-unix -e DISPLAY=unix$DISPLAY -d -p 9000:9000 --name scigraph-services scigraph-services-monarch"
+                                ssh monarch@$SCIGRAPH_DATA_DEV "docker run --restart=unless-stopped -v /var/scigraph:/data -v /opt/scigraph-docker/conf:/scigraph/conf -d -p 9000:9000 --name scigraph-services scigraph start-scigraph-service monarchConfiguration.yaml"
 
                                 # clean up residual docker images
                                 docker rm -v $(docker ps -a -q -f status=exited) || true
                                 docker rmi $(docker images -f 'dangling=true' -q) || true
 
                                 # Remove graph
-                                rm -rf $SCIGRAPH_DIR/data-graph/
-                                rm -rf $SCIGRAPH_DIR/SciGraph-docker-monarch-data/
+                                rm -rf $SCIGRAPH_DIR/data/
                             '''
                         }
                     },
                     "load scigraph ontology on dev": {
                         dir('./load-scigraph-ontology-on-dev') {
-                            sh 'sudo rm -rf ./ontology-graph/'
+                            sh 'sudo rm -rf ./data/'
                             deleteDir()}
                         dir('./load-scigraph-ontology-on-dev') {
+                            git(
+                                url: 'https://github.com/monarch-initiative/scigraph-docker',
+                                branch: 'master'
+                            )
                             sh '''
+                                git clone https://github.com/monarch-initiative/monarch-cypher-queries.git monarch-cypher-queries
+                                
+                                # Generate config files
+                                ./conf/build-load-conf.sh ontology
+                                
                                 SCIGRAPH_DIR=$WORKSPACE/load-scigraph-ontology-on-dev
                                 
-                                # Get and install the queries and curies
-                                git clone https://github.com/monarch-initiative/dipper.git dipper
-                                git clone https://github.com/monarch-initiative/monarch-cypher-queries.git monarch-cypher-queries
-                                git clone https://github.com/SciGraph/SciGraph.git SciGraph
+                                docker build -t scigraph .
+                                
+                                docker run \\
+                                    -v $SCIGRAPH_DIR/data:/data \\
+                                    -v $SCIGRAPH_DIR/conf:/scigraph/conf \\
+                                    scigraph load-scigraph monarchLoadConfiguration.yaml
 
-                                cd SciGraph && mvn clean install -DskipTests
-                                cd ../dipper/maven && mvn clean install
-                                cd ../../monarch-cypher-queries && mvn clean install && cd ..
-
-                                # package docker images
-                                git clone https://github.com/monarch-initiative/SciGraph-docker-monarch-ontology.git SciGraph-docker-monarch-ontology
-                                cd SciGraph-docker-monarch-ontology && mvn clean package
-
-                                # fire the load
-                                docker run -v $SCIGRAPH_DIR/ontology-graph:/scigraph scigraph-load-monarch-ontology
-
-                                sudo chown -R jenkins:jenkins $SCIGRAPH_DIR/ontology-graph
+                                # Change ownership from root to jenkins
+                                sudo chown -R jenkins:jenkins $SCIGRAPH_DIR/data
 
                                 # move graph to expected neo4j dir structure
-                                mkdir -p $SCIGRAPH_DIR/ontology-graph/databases/graph.db
-                                mv $SCIGRAPH_DIR/ontology-graph/graph/* $SCIGRAPH_DIR/ontology-graph/databases/graph.db/
+                                mkdir -p $SCIGRAPH_DIR/data/databases/graph.db
+                                mv $SCIGRAPH_DIR/data/graph/* $SCIGRAPH_DIR/data/databases/graph.db/
                                 cp /opt/neo4j/conf/ontology-graph.conf /opt/neo4j/conf/neo4j.conf
 
                                 # Start neo4j
                                 /opt/neo4j/bin/neo4j start
-                                sleep 30
+                                sleep 60
 
                                 # Delete owl:Nothing edges and node
                                 cat $SCIGRAPH_DIR/monarch-cypher-queries/src/main/cypher/kg-transform/del-nothing.cql | /opt/neo4j/bin/cypher-shell -a bolt://localhost:7687
@@ -156,11 +161,10 @@ pipeline {
                                 /opt/neo4j/bin/neo4j stop
 
                                 # Move data back
-                                mv $SCIGRAPH_DIR/ontology-graph/databases/graph.db/* $SCIGRAPH_DIR/ontology-graph/graph/
+                                mv $SCIGRAPH_DIR/data/databases/graph.db/* $SCIGRAPH_DIR/data/graph/
 
                                 # creating the archive
-                                sudo rm -f $SCIGRAPH_DIR/ontology-graph/scigraph.tgz
-                                cd $SCIGRAPH_DIR/ontology-graph && tar czfv scigraph.tgz graph/
+                                cd $SCIGRAPH_DIR/data && tar czfv scigraph.tgz graph/
 
                                 # stop the service
                                 ssh monarch@$SCIGRAPH_ONTOLOGY_DEV "docker stop scigraph-services"
@@ -171,19 +175,18 @@ pipeline {
                                 ssh monarch@$SCIGRAPH_ONTOLOGY_DEV "sudo rm -rf /var/scigraph/graph"
 
                                 # copy the graph over and expand it
-                                scp $SCIGRAPH_DIR/ontology-graph/scigraph.tgz monarch@$SCIGRAPH_ONTOLOGY_DEV:~
+                                scp $SCIGRAPH_DIR/data/scigraph.tgz monarch@$SCIGRAPH_ONTOLOGY_DEV:~
                                 ssh monarch@$SCIGRAPH_ONTOLOGY_DEV "sudo mv ~/scigraph.tgz /var/www/data"
                                 ssh monarch@$SCIGRAPH_ONTOLOGY_DEV "cd /var/scigraph && sudo tar xzfv /var/www/data/scigraph.tgz"
 
-                                # restart the service
-                                ssh monarch@$SCIGRAPH_ONTOLOGY_DEV "docker run --restart=unless-stopped -v /var/scigraph:/scigraph -v /tmp/.X11-unix:/tmp/.X11-unix -e DISPLAY=unix$DISPLAY -d -p 9000:9000 --name scigraph-services scigraph-services-monarch-ontology"
+                                ssh monarch@$SCIGRAPH_ONTOLOGY_DEV "docker run --restart=unless-stopped -v /var/scigraph:/data -v /opt/scigraph-docker/conf:/scigraph/conf -d -p 9000:9000 --name scigraph-services scigraph start-scigraph-service monarchConfiguration.yaml"
 
                                 # clean up residual docker images
                                 docker rm -v $(docker ps -a -q -f status=exited) || true
                                 docker rmi $(docker images -f 'dangling=true' -q) || true
 
-                                rm -rf $SCIGRAPH_DIR/ontology-graph/
-                                rm -rf $SCIGRAPH_DIR/SciGraph-docker-monarch-ontology/
+                                # Remove graph
+                                rm -rf $SCIGRAPH_DIR/data/
                             '''
                         }
                     }
