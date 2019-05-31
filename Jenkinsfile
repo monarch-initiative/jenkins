@@ -50,8 +50,9 @@ pipeline {
                             sh '''
                                 git clone https://github.com/monarch-initiative/monarch-cypher-queries.git monarch-cypher-queries
                                 
-                                # Generate config files
-                                ./conf/build-load-conf.sh
+                                # generate config files
+                                ./conf/build-load-conf.sh data
+                                ./conf/build-service-conf.sh data
                                 
                                 cd ./data/
                                 wget -r -l1 -nH --no-parent -R "index.html*" https://archive.monarchinitiative.org/201902/ttl/
@@ -67,7 +68,7 @@ pipeline {
                                     -v $SCIGRAPH_DIR/conf:/scigraph/conf \\
                                     scigraph-data load-scigraph monarchLoadConfiguration.yaml
 
-                                # Change ownership from root to jenkins
+                                # change ownership from root to jenkins
                                 sudo chown -R jenkins:jenkins $SCIGRAPH_DIR/data
 
                                 # move graph to expected neo4j dir structure
@@ -75,20 +76,20 @@ pipeline {
                                 mv $SCIGRAPH_DIR/data/graph/* $SCIGRAPH_DIR/data/databases/graph.db/
                                 cp /opt/neo4j/conf/data-graph.conf /opt/neo4j/conf/neo4j.conf
 
-                                # Start neo4j
+                                # start neo4j
                                 /opt/neo4j/bin/neo4j start
                                 sleep 60
 
-                                # Delete owl:Nothing edges and node
+                                # delete owl:Nothing edges and node
                                 cat $SCIGRAPH_DIR/monarch-cypher-queries/src/main/cypher/kg-transform/del-nothing.cql | /opt/neo4j/bin/cypher-shell -a bolt://localhost:7687
 
-                                # Add variant labels
+                                # add variant labels
                                 cat $SCIGRAPH_DIR/monarch-cypher-queries/src/main/cypher/kg-transform/add-variant-label.cql | /opt/neo4j/bin/cypher-shell -a bolt://localhost:7687
 
-                                # Stop neo4j
+                                # stop neo4j
                                 /opt/neo4j/bin/neo4j stop
 
-                                # Move data back
+                                # move data back
                                 mv $SCIGRAPH_DIR/data/databases/graph.db/* $SCIGRAPH_DIR/data/graph/
 
                                 # creating the archive
@@ -96,7 +97,6 @@ pipeline {
 
                                 # stop the service
                                 ssh monarch@$SCIGRAPH_DATA_DEV "docker stop scigraph-services"
-                                ssh monarch@$SCIGRAPH_DATA_DEV "docker rm scigraph-services"
 
                                 # delete old graph
                                 ssh monarch@$SCIGRAPH_DATA_DEV "sudo rm -f /var/www/data/scigraph.tgz"
@@ -104,16 +104,23 @@ pipeline {
 
                                 # copy the graph over and expand it
                                 scp $SCIGRAPH_DIR/data/scigraph.tgz monarch@$SCIGRAPH_DATA_DEV:~
+                                
+                                # move the graph
                                 ssh monarch@$SCIGRAPH_DATA_DEV "sudo mv ~/scigraph.tgz /var/www/data"
                                 ssh monarch@$SCIGRAPH_DATA_DEV "cd /var/scigraph && sudo tar xzfv /var/www/data/scigraph.tgz"
-
-                                ssh monarch@$SCIGRAPH_DATA_DEV "docker run --restart=unless-stopped -v /var/scigraph:/data -v /opt/scigraph-docker/conf:/scigraph/conf -d -p 9000:9000 --name scigraph-services scigraph start-scigraph-service monarchConfiguration.yaml"
+                                
+                                # move the config
+                                scp $SCIGRAPH_DIR/conf/monarchConfiguration.yaml monarch@$SCIGRAPH_DATA_DEV:~
+                                ssh monarch@$SCIGRAPH_DATA_DEV "sudo mv ~/monarchConfiguration.yaml /var/scigraph/conf/"
+                                
+                                # start the service
+                                ssh monarch@$SCIGRAPH_DATA_DEV "docker start scigraph-services"
 
                                 # clean up residual docker images
                                 docker rm -v $(docker ps -a -q -f status=exited) || true
                                 docker rmi $(docker images -f 'dangling=true' -q) || true
 
-                                # Remove graph
+                                # remove graph
                                 rm -rf $SCIGRAPH_DIR/data/
                             '''
                         }
@@ -130,8 +137,9 @@ pipeline {
                             sh '''
                                 git clone https://github.com/monarch-initiative/monarch-cypher-queries.git monarch-cypher-queries
                                 
-                                # Generate config files
+                                # generate config files
                                 ./conf/build-load-conf.sh ontology
+                                ./conf/build-service-conf.sh ontology
                                 
                                 SCIGRAPH_DIR=$WORKSPACE/load-scigraph-ontology-on-dev
                                 
@@ -142,7 +150,7 @@ pipeline {
                                     -v $SCIGRAPH_DIR/conf:/scigraph/conf \\
                                     scigraph load-scigraph monarchLoadConfiguration.yaml
 
-                                # Change ownership from root to jenkins
+                                # change ownership from root to jenkins
                                 sudo chown -R jenkins:jenkins $SCIGRAPH_DIR/data
 
                                 # move graph to expected neo4j dir structure
@@ -150,17 +158,17 @@ pipeline {
                                 mv $SCIGRAPH_DIR/data/graph/* $SCIGRAPH_DIR/data/databases/graph.db/
                                 cp /opt/neo4j/conf/ontology-graph.conf /opt/neo4j/conf/neo4j.conf
 
-                                # Start neo4j
+                                # start neo4j
                                 /opt/neo4j/bin/neo4j start
                                 sleep 60
 
-                                # Delete owl:Nothing edges and node
+                                # delete owl:Nothing edges and node
                                 cat $SCIGRAPH_DIR/monarch-cypher-queries/src/main/cypher/kg-transform/del-nothing.cql | /opt/neo4j/bin/cypher-shell -a bolt://localhost:7687
 
-                                # Stop neo4j
+                                # stop neo4j
                                 /opt/neo4j/bin/neo4j stop
 
-                                # Move data back
+                                # move data back
                                 mv $SCIGRAPH_DIR/data/databases/graph.db/* $SCIGRAPH_DIR/data/graph/
 
                                 # creating the archive
@@ -168,7 +176,6 @@ pipeline {
 
                                 # stop the service
                                 ssh monarch@$SCIGRAPH_ONTOLOGY_DEV "docker stop scigraph-services"
-                                ssh monarch@$SCIGRAPH_ONTOLOGY_DEV "docker rm scigraph-services"
 
                                 # delete old graph
                                 ssh monarch@$SCIGRAPH_ONTOLOGY_DEV "sudo rm -f /var/www/data/scigraph.tgz"
@@ -178,14 +185,19 @@ pipeline {
                                 scp $SCIGRAPH_DIR/data/scigraph.tgz monarch@$SCIGRAPH_ONTOLOGY_DEV:~
                                 ssh monarch@$SCIGRAPH_ONTOLOGY_DEV "sudo mv ~/scigraph.tgz /var/www/data"
                                 ssh monarch@$SCIGRAPH_ONTOLOGY_DEV "cd /var/scigraph && sudo tar xzfv /var/www/data/scigraph.tgz"
-
-                                ssh monarch@$SCIGRAPH_ONTOLOGY_DEV "docker run --restart=unless-stopped -v /var/scigraph:/data -v /opt/scigraph-docker/conf:/scigraph/conf -d -p 9000:9000 --name scigraph-services scigraph start-scigraph-service monarchConfiguration.yaml"
+                                
+                                # move the config
+                                scp $SCIGRAPH_DIR/conf/monarchConfiguration.yaml monarch@$SCIGRAPH_ONTOLOGY_DEV:~
+                                ssh monarch@$SCIGRAPH_ONTOLOGY_DEV "sudo mv ~/monarchConfiguration.yaml /var/scigraph/conf/"
+                                
+                                # start the service
+                                ssh monarch@$SCIGRAPH_ONTOLOGY_DEV "docker start scigraph-services"
 
                                 # clean up residual docker images
                                 docker rm -v $(docker ps -a -q -f status=exited) || true
                                 docker rmi $(docker images -f 'dangling=true' -q) || true
 
-                                # Remove graph
+                                # remove graph
                                 rm -rf $SCIGRAPH_DIR/data/
                             '''
                         }
