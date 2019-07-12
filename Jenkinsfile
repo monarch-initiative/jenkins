@@ -24,6 +24,7 @@ pipeline {
         SCIGRAPH_DATA_DEV = 'monarch-scigraph-data-dev'
         SCIGRAPH_ONTOLOGY_DEV = 'monarch-scigraph-ontology-dev'
         MONARCH_APP_BETA = 'monarch-app-beta'
+        MONARCH4 = 'monarch4'
     }
 
     options {
@@ -206,69 +207,29 @@ pipeline {
             }
         }
 
-        stage('Check cypher queries against new graph') {
-            steps {
-                dir('./check-golr-queries') {deleteDir()}
-                dir('./check-golr-queries') {
-                    git(
-                        url: 'https://github.com/SciGraph/golr-loader.git',
-                        branch: 'master'
-                    )
-                    sh '''
-                        wget scigraph-data-dev.monarchinitiative.org/static_files/scigraph.tgz
-                        tar xzfv scigraph.tgz
-                        wget https://raw.githubusercontent.com/monarch-initiative/dipper/master/dipper/curie_map.yaml
-                        wget https://github.com/monarch-initiative/monarch-cypher-queries/archive/master.zip
-
-                        unzip master.zip
-
-                        MAVEN_OPTS="-Xmx100G" mvn compile exec:java -Dexec.mainClass="org.monarch.golr.QueriesSanityCheck" -Dexec.args="graph curie_map.yaml monarch-cypher-queries-master/src/main/cypher/golr-loader/  monarch-cypher-queries-master/src/main/cypher/feature-location/"
-
-                        rm -rf graph
-                        rm scigraph.tgz
-                        '''
-                }
-            }
-        }
-
         stage('Create and load golr core from scigraph dev') {
             steps {
-                dir('./create-and-load-golr-core') {deleteDir()}
-                dir('./create-and-load-golr-core') {
-                    git(
-                        url: 'https://github.com/monarch-initiative/solr-docker-monarch-golr.git',
-                        branch: 'master'
-                    )
-                    sh '''
-                        SOLR_WORKSPACE=$WORKSPACE/create-and-load-golr-core
-                        # clean up residual docker images
-                        docker rm -v \$(docker ps -a -q -f status=exited) || true
-                        docker rmi \$(docker images -f 'dangling=true' -q) || true
-                        docker build --no-cache -t solr-docker-monarch-golr .
+                sh '''
+                    REMOTE_DIR="/disk/vmpartition/data/golr-docker"
 
-                        docker run -v $SOLR_WORKSPACE/solr:/solr solr-docker-monarch-golr
+                    ssh monarch@$MONARCH4 "rm -rf $REMOTE_DIR/solr-docker-monarch-golr"
+                    ssh monarch@$MONARCH4 "cd $REMOTE_DIR && git clone https://github.com/monarch-initiative/solr-docker-monarch-golr.git"
+                    ssh monarch@$MONARCH4 "cd $REMOTE_DIR/solr-docker-monarch-golr && docker build --no-cache -t solr-docker-monarch-golr ."
+                    ssh monarch@$MONARCH4 "cd $REMOTE_DIR/solr-docker-monarch-golr && docker run -v $WORKSPACE/solr:/solr solr-docker-monarch-golr"
 
-                        sudo chown -R jenkins:jenkins ./solr
+                    # stop solr
+                    ssh monarch@$SOLR_DEV "sudo service solr stop"
 
-                        scp solr/golr.tar monarch@$SOLR_DEV:/tmp/
+                    ssh monarch@$SOLR_DEV "sudo rm -rf /var/solr/data/golr"
+                    ssh monarch@$SOLR_DEV "sudo chown monarch:monarch /mnt/data/solr-docker-monarch-golr/solr/golr.tar"
 
-                        # clean up residual docker images
-                        docker rm -v \$(docker ps -a -q -f status=exited) || true
-                        docker rmi \$(docker images -f 'dangling=true' -q) || true
+                    ssh monarch@$SOLR_DEV "cd /var/solr/data && sudo tar xfv /mnt/data/solr-docker-monarch-golr/solr/golr.tar"
 
-                        # stop solr
-                        ssh monarch@$SOLR_DEV "sudo service solr stop"
+                    ssh monarch@$SOLR_DEV "sudo chown -R solr:solr /var/solr/data/golr"
 
-                        ssh monarch@$SOLR_DEV "sudo rm -rf /var/solr/data/golr"
-                        ssh monarch@$SOLR_DEV "cd /var/solr/data && sudo tar xfv /tmp/golr.tar"
-                        ssh monarch@$SOLR_DEV "sudo chown -R solr:solr /var/solr/data/golr"
-
-                        # start solr
-                        ssh monarch@$SOLR_DEV "sudo service solr start"
-                        
-                        rm -rf ./solr/
-                        '''
-                }
+                    # start solr
+                    ssh monarch@SOLR_DEV "sudo service solr start"
+                '''
             }
         }
 
@@ -450,11 +411,11 @@ pipeline {
 
                                 # start owlsim
                                 ssh monarch@$MONARCH_APP_BETA "sudo supervisorctl start owlsim"
-
-                                scp -r ./monarch-owlsim-data/data monarch@$MONARCH_DATA_FS:/var/www/data/owlsim/
+                                
                                 scp ic-cache.owl monarch@$MONARCH_DATA_FS:/var/www/data/owlsim/
                                 scp owlsim.cache monarch@$MONARCH_DATA_FS:/var/www/data/owlsim/
                                 scp all.owl monarch@$MONARCH_DATA_FS:/var/www/data/owlsim/
+                                cd .. && scp -r ./monarch-owlsim-data/data monarch@$MONARCH_DATA_FS:/var/www/data/owlsim/
                             '''
                         }
                     },
