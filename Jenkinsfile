@@ -215,7 +215,7 @@ pipeline {
                     ssh monarch@$MONARCH4 "rm -rf $REMOTE_DIR/solr-docker-monarch-golr"
                     ssh monarch@$MONARCH4 "cd $REMOTE_DIR && git clone https://github.com/monarch-initiative/solr-docker-monarch-golr.git"
                     ssh monarch@$MONARCH4 "cd $REMOTE_DIR/solr-docker-monarch-golr && docker build --no-cache -t solr-docker-monarch-golr ."
-                    ssh monarch@$MONARCH4 "cd $REMOTE_DIR/solr-docker-monarch-golr && docker run -v $WORKSPACE/solr:/solr solr-docker-monarch-golr"
+                    ssh monarch@$MONARCH4 "cd $REMOTE_DIR/solr-docker-monarch-golr && docker run -v $REMOTE_DIR/solr-docker-monarch-golr/solr:/solr solr-docker-monarch-golr"
 
                     # stop solr
                     ssh monarch@$SOLR_DEV "sudo service solr stop"
