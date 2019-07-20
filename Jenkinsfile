@@ -227,7 +227,7 @@ pipeline {
                     ssh monarch@$SOLR_DEV "sudo chown -R solr:solr /var/solr/data/golr"
 
                     # start solr
-                    ssh monarch@SOLR_DEV "sudo service solr start"
+                    ssh monarch@$SOLR_DEV "sudo service solr start"
                 '''
             }
         }
