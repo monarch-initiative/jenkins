@@ -262,6 +262,9 @@ pipeline {
                                 ssh monarch@$SOLR_DEV "cd /var/solr/data && sudo tar xfv /tmp/search.tar"
                                 ssh monarch@$SOLR_DEV "sudo chown -R solr:solr /var/solr/data/search"
                                 
+                                # start solr
+                                ssh monarch@$SOLR_DEV "sudo service solr start"
+                                
                                 rm -rf ./solr/
                             '''
                         }
