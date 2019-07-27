@@ -87,6 +87,10 @@ pipeline {
                                 # add variant labels
                                 cat $SCIGRAPH_DIR/monarch-cypher-queries/src/main/cypher/kg-transform/add-variant-label.cql | /opt/neo4j/bin/cypher-shell -a bolt://localhost:7687
 
+                                # remove subClassOf cycles for phenotypes
+                                # https://github.com/monarch-initiative/monarch-ontology/issues/21
+                                cat $SCIGRAPH_DIR/monarch-cypher-queries/src/main/cypher/kg-transform/del-subclass-cycles.cql | /opt/neo4j/bin/cypher-shell -a bolt://localhost:7687
+                                   
                                 # stop neo4j
                                 /opt/neo4j/bin/neo4j stop
 
@@ -165,6 +169,10 @@ pipeline {
 
                                 # delete owl:Nothing edges and node
                                 cat $SCIGRAPH_DIR/monarch-cypher-queries/src/main/cypher/kg-transform/del-nothing.cql | /opt/neo4j/bin/cypher-shell -a bolt://localhost:7687
+
+                                # remove subClassOf cycles for phenotypes 
+                                # https://github.com/monarch-initiative/monarch-ontology/issues/21
+                                cat $SCIGRAPH_DIR/monarch-cypher-queries/src/main/cypher/kg-transform/del-subclass-cycles.cql | /opt/neo4j/bin/cypher-shell -a bolt://localhost:7687
 
                                 # stop neo4j
                                 /opt/neo4j/bin/neo4j stop
