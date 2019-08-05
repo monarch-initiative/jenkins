@@ -404,7 +404,7 @@ pipeline {
 
                                 cd server
 
-                                OWLTOOLS_MEMORY=50G make caches
+                                OWLTOOLS_MEMORY=100G make caches
 
                                 # stop owlsim
                                 ssh monarch@$MONARCH_APP_BETA "sudo supervisorctl stop owlsim"
