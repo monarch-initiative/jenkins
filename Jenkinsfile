@@ -323,7 +323,7 @@ pipeline {
                         dir('./diff-and-qc') {deleteDir()}
                         dir('./diff-and-qc') {
                             git(
-                                url: 'https://github.com/monarch-initiative/monarch-analysis.git',
+                                url: 'https://github.com/monarch-initiative/release-utils.git',
                                 branch: 'master'
                             )
                             sh '''
@@ -332,9 +332,12 @@ pipeline {
                                 mkdir $directory
 
                                 virtualenv -p /usr/bin/python3 venv
-                                venv/bin/pip install requests markdown
-                                venv/bin/python3 ./monarch/monarch-data-diff.py --config ./conf/monarch-qc.json --threshold 2 --out ./data-diff-"${timestamp}"
+                                venv/bin/pip install -r requirements.txt
+                                export PYTHONPATH=.:$PYTHONPATH
+                                venv/bin/python3 ./scripts/monarch-count-diff.py --config ./conf/monarch-qc.yaml -t 100 -q
 
+                                mv ./monarch-diff.md ./$directory/monarch-diff-"${timestamp}".md && mv ./monarch-diff.html ./$directory/monarch-diff-"${timestamp}".html
+                                
                                 grep SEVERE /var/lib/jenkins/jobs/monarch-data-pipeline/builds/$BUILD_NUMBER/log | perl -e '$pos; while(<>){chomp; if ($_ =~ m/.*clique.*/){ $pos = 1;} elsif ($pos == 1){ $_ =~ s/SEVERE: //; print "\\n$_"; $pos=2;} elsif($pos == 2){ $_ =~ s/SEVERE: //; print "\\t$_";}}' | sed '/^$/d' > ./data-diff-"${timestamp}"/clique-warnings.tsv
 
                                 scp -r ./$directory monarch@$MONARCH_DATA_FS:/var/www/data/qc/
@@ -425,7 +428,7 @@ pipeline {
                                 scp ic-cache.owl monarch@$MONARCH_DATA_FS:/var/www/data/owlsim/
                                 scp owlsim.cache monarch@$MONARCH_DATA_FS:/var/www/data/owlsim/
                                 scp all.owl monarch@$MONARCH_DATA_FS:/var/www/data/owlsim/
-                                cd .. && scp -r ./monarch-owlsim-data/data monarch@$MONARCH_DATA_FS:/var/www/data/owlsim/
+                                cd .. && scp -r ./data monarch@$MONARCH_DATA_FS:/var/www/data/owlsim/
                             '''
                         }
                     },
