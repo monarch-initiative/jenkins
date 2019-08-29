@@ -429,6 +429,9 @@ pipeline {
                                 scp owlsim.cache monarch@$MONARCH_DATA_FS:/var/www/data/owlsim/
                                 scp all.owl monarch@$MONARCH_DATA_FS:/var/www/data/owlsim/
                                 cd .. && scp -r ./data monarch@$MONARCH_DATA_FS:/var/www/data/owlsim/
+                                
+                                sleep 900
+                                curl https://beta.monarchinitiative.org/owlsim/getAttributeInformationProfile
                             '''
                         }
                     },
