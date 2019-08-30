@@ -56,8 +56,8 @@ pipeline {
                                 ./conf/build-service-conf.sh data
                                 
                                 cd ./data/
-                                wget -r -l1 -nH --no-parent -R "index.html*" https://archive.monarchinitiative.org/201908/ttl/
-                                wget -r -l1 -nH --no-parent -R "index.html*" https://archive.monarchinitiative.org/201908/owl/
+                                wget -r -l1 -nH --no-parent -R "index.html*" https://archive.monarchinitiative.org/201909/ttl/
+                                wget -r -l1 -nH --no-parent -R "index.html*" https://archive.monarchinitiative.org/201909/owl/
                                 cd -
                                 
                                 SCIGRAPH_DIR=$WORKSPACE/load-scigraph-data-on-dev
