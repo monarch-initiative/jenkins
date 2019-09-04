@@ -439,18 +439,18 @@ pipeline {
                         dir('./make-monarch-tsvs') {deleteDir()}
                         dir('./make-monarch-tsvs') {
                             git(
-                                url: 'https://github.com/monarch-initiative/monarch-analysis.git',
+                                url: 'https://github.com/monarch-initiative/release-utils.git',
                                 branch: 'master'
                             )
                             sh '''
                                 virtualenv -p /usr/bin/python3 venv
-                                venv/bin/pip install requests
+                                venv/bin/pip install -r requirements.txt
+                                export PYTHONPATH=.:$PYTHONPATH
 
                                 mkdir out
-                                venv/bin/python ./monarch/dump-data.py --out ./out/ --config ./conf/data-dump-conf.json
-
+                                venv/bin/python3 ./scripts/dump-data.py --out ./out/ --config ./conf/data-dump-conf.yaml
                                 cd out
-
+                                
                                 for directory in */ ; do
                                   cd $directory
                                   for file in ./* ; do
