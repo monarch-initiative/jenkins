@@ -200,7 +200,7 @@ pipeline {
                                 # move the config
                                 scp $SCIGRAPH_DIR/conf/monarchConfiguration.yaml monarch@$SCIGRAPH_ONTOLOGY_DEV:~
                                 ssh monarch@$SCIGRAPH_ONTOLOGY_DEV "sudo cp ~/monarchConfiguration.yaml /var/scigraph/conf/"
-                                ssh monarch@$SCIGRAPH_DATA_DEV "sudo mv ~/monarchConfiguration.yaml /var/www/data/"
+                                ssh monarch@$SCIGRAPH_ONTOLOGY_DEV "sudo mv ~/monarchConfiguration.yaml /var/www/data/"
                                 
                                 # start the service
                                 ssh monarch@$SCIGRAPH_ONTOLOGY_DEV "docker start scigraph-services"
