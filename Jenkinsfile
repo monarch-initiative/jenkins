@@ -52,12 +52,12 @@ pipeline {
                                 git clone https://github.com/monarch-initiative/monarch-cypher-queries.git monarch-cypher-queries
                                 
                                 # generate config files
-                                ./conf/build-load-conf.sh data 'https://archive.monarchinitiative.org/201911/translationtable/curie_map.yaml'
-                                ./conf/build-service-conf.sh data 'https://archive.monarchinitiative.org/201911/translationtable/curie_map.yaml'
+                                ./conf/build-load-conf.sh data 'https://archive.monarchinitiative.org/beta/translationtable/curie_map.yaml'
+                                ./conf/build-service-conf.sh data 'https://archive.monarchinitiative.org/beta/translationtable/curie_map.yaml'
                                 
                                 cd ./data/
-                                wget -r -l1 -nH --no-parent -R "index.html*" https://archive.monarchinitiative.org/201911/rdf/
-                                wget -r -l1 -nH --no-parent -R "index.html*" https://archive.monarchinitiative.org/201911/owl/
+                                wget -r -l1 -nH --no-parent -R "index.html*" https://archive.monarchinitiative.org/beta/rdf/*.nt
+                                wget -r -l1 -nH --no-parent -R "index.html*" https://archive.monarchinitiative.org/beta/owl/
                                 cd -
                                 
                                 SCIGRAPH_DIR=$WORKSPACE/load-scigraph-data-on-dev
