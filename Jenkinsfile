@@ -25,6 +25,8 @@ pipeline {
         SCIGRAPH_ONTOLOGY_DEV = 'monarch-scigraph-ontology-dev'
         MONARCH_APP_BETA = 'monarch-app-beta'
         MONARCH4 = 'monarch4'
+        BETA="https://archive.monarchinitiative.org/beta"
+        WGET="wget --recursive --no-parent --no-verbose --no-host-directories --level=1 --cut-dirs=1 --reject 'index.html'"
     }
 
     options {
@@ -50,9 +52,6 @@ pipeline {
                             )
                             sh '''
                                 git clone https://github.com/monarch-initiative/monarch-cypher-queries.git monarch-cypher-queries
-
-                                BETA="https://archive.monarchinitiative.org/beta"
-                                WGET="wget --recursive --no-parent --no-verbose --no-host-directories --level=1 --cut-dirs=1 --reject 'index.html'"
                                 # generate config files
                                 ./conf/build-load-conf.sh data "$BETA/translationtable/curie_map.yaml"
                                 ./conf/build-service-conf.sh data "$BETA/translationtable/curie_map.yaml"
