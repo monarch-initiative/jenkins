@@ -52,21 +52,21 @@ pipeline {
                                 git clone https://github.com/monarch-initiative/monarch-cypher-queries.git monarch-cypher-queries
 
                                 BETA="https://archive.monarchinitiative.org/beta"
-                                WGET="wget --recursive --no-parent --no-verbose --no-host-directories --level=1 --reject 'index.html'"
+                                WGET="wget --recursive --no-parent --no-verbose --no-host-directories --level=1 --cut-dirs=1 --reject 'index.html'"
                                 # generate config files
                                 ./conf/build-load-conf.sh data "$BETA/translationtable/curie_map.yaml"
                                 ./conf/build-service-conf.sh data "$BETA/translationtable/curie_map.yaml"
-                                
+
                                 cd ./data/
                                 $WGET --accept ".nt" $BETA/rdf/
                                 $WGET $BETA/owl/
                                 chmod a+r *
                                 cd -
-                                
+
                                 SCIGRAPH_DIR=$WORKSPACE/load-scigraph-data-on-dev
-                                
+
                                 docker build -t scigraph-data .
-                                
+
                                 docker run \\
                                     -v $SCIGRAPH_DIR/data:/data \\
                                     -v $SCIGRAPH_DIR/conf:/scigraph/conf \\
@@ -96,7 +96,7 @@ pipeline {
                                 # https://github.com/monarch-initiative/monarch-ontology/issues/21
                                 cat $SCIGRAPH_DIR/monarch-cypher-queries/src/main/cypher/kg-transform/del-subclass-cycles.cql |
                                     /opt/neo4j/bin/cypher-shell -a bolt://localhost:7687
-                                   
+
                                 # stop neo4j
                                 /opt/neo4j/bin/neo4j stop
 
@@ -115,17 +115,17 @@ pipeline {
 
                                 # copy the graph over and expand it
                                 scp $SCIGRAPH_DIR/data/scigraph.tgz monarch@$SCIGRAPH_DATA_DEV:~
-                                
+
                                 # move the graph
                                 ssh monarch@$SCIGRAPH_DATA_DEV "sudo mv ~/scigraph.tgz /var/www/data"
                                 ssh monarch@$SCIGRAPH_DATA_DEV "cd /var/scigraph && sudo tar xzfv /var/www/data/scigraph.tgz"
-                                
+
                                 # move the config
                                 scp $SCIGRAPH_DIR/conf/monarchConfiguration.yaml monarch@$SCIGRAPH_DATA_DEV:~
                                 ssh monarch@$SCIGRAPH_DATA_DEV "sudo cp ~/monarchConfiguration.yaml /var/scigraph/conf/"
                                 ssh monarch@$SCIGRAPH_DATA_DEV "sudo mv ~/monarchConfiguration.yaml /var/www/data/"
 
-                                
+
                                 # start the service
                                 ssh monarch@$SCIGRAPH_DATA_DEV "docker start scigraph-services"
 
@@ -149,15 +149,15 @@ pipeline {
                             )
                             sh '''
                                 git clone https://github.com/monarch-initiative/monarch-cypher-queries.git monarch-cypher-queries
-                                
+
                                 # generate config files
                                 ./conf/build-load-conf.sh ontology 'https://archive.monarchinitiative.org/201911/translationtable/curie_map.yaml'
                                 ./conf/build-service-conf.sh ontology 'https://archive.monarchinitiative.org/201911/translationtable/curie_map.yaml'
-                                
+
                                 SCIGRAPH_DIR=$WORKSPACE/load-scigraph-ontology-on-dev
-                                
+
                                 docker build -t scigraph .
-                                
+
                                 docker run \\
                                     -v $SCIGRAPH_DIR/data:/data \\
                                     -v $SCIGRAPH_DIR/conf:/scigraph/conf \\
@@ -179,7 +179,7 @@ pipeline {
                                 cat $SCIGRAPH_DIR/monarch-cypher-queries/src/main/cypher/kg-transform/del-nothing.cql |
                                     /opt/neo4j/bin/cypher-shell -a bolt://localhost:7687
 
-                                # remove subClassOf cycles for phenotypes 
+                                # remove subClassOf cycles for phenotypes
                                 # https://github.com/monarch-initiative/monarch-ontology/issues/21
                                 cat $SCIGRAPH_DIR/monarch-cypher-queries/src/main/cypher/kg-transform/del-subclass-cycles.cql |
                                     /opt/neo4j/bin/cypher-shell -a bolt://localhost:7687
@@ -204,12 +204,12 @@ pipeline {
                                 scp $SCIGRAPH_DIR/data/scigraph.tgz monarch@$SCIGRAPH_ONTOLOGY_DEV:~
                                 ssh monarch@$SCIGRAPH_ONTOLOGY_DEV "sudo mv ~/scigraph.tgz /var/www/data"
                                 ssh monarch@$SCIGRAPH_ONTOLOGY_DEV "cd /var/scigraph && sudo tar xzfv /var/www/data/scigraph.tgz"
-                                
+
                                 # move the config
                                 scp $SCIGRAPH_DIR/conf/monarchConfiguration.yaml monarch@$SCIGRAPH_ONTOLOGY_DEV:~
                                 ssh monarch@$SCIGRAPH_ONTOLOGY_DEV "sudo cp ~/monarchConfiguration.yaml /var/scigraph/conf/"
                                 ssh monarch@$SCIGRAPH_ONTOLOGY_DEV "sudo mv ~/monarchConfiguration.yaml /var/www/data/"
-                                
+
                                 # start the service
                                 ssh monarch@$SCIGRAPH_ONTOLOGY_DEV "docker start scigraph-services"
 
@@ -276,14 +276,14 @@ pipeline {
 
                                 # stop solr
                                 ssh monarch@$SOLR_DEV "sudo service solr stop"
-                                    
+
                                 ssh monarch@$SOLR_DEV "sudo rm -rf /var/solr/data/search"
                                 ssh monarch@$SOLR_DEV "cd /var/solr/data && sudo tar xfv /tmp/search.tar"
                                 ssh monarch@$SOLR_DEV "sudo chown -R solr:solr /var/solr/data/search"
-                                
+
                                 # start solr
                                 ssh monarch@$SOLR_DEV "sudo service solr start"
-                                
+
                                 rm -rf ./solr/
                             '''
                         }
@@ -319,7 +319,7 @@ pipeline {
 
                                 # start solr
                                 ssh monarch@$SOLR_DEV "sudo service solr start"
-                                
+
                                 rm -rf ./solr/
                             '''
                         }
@@ -348,7 +348,7 @@ pipeline {
                                 venv/bin/python3 ./scripts/monarch-count-diff.py --config ./conf/monarch-qc.yaml -t 100 -q
 
                                 mv ./monarch-diff.md ./$directory/monarch-diff-"${timestamp}".md && mv ./monarch-diff.html ./$directory/monarch-diff-"${timestamp}".html
-                                
+
                                 grep SEVERE /var/lib/jenkins/jobs/monarch-data-pipeline/builds/$BUILD_NUMBER/log |
                                     perl -e '$pos; while(<>){chomp; if ($_ =~ m/.*clique.*/){ $pos = 1;} elsif ($pos == 1){ $_ =~ s/SEVERE: //; print "\\n$_"; $pos=2;} elsif($pos == 2){ $_ =~ s/SEVERE: //; print "\\t$_";}}' |
                                     sed '/^$/d' > ./data-diff-"${timestamp}"/clique-warnings.tsv
@@ -386,7 +386,7 @@ pipeline {
                                 mv Hs_case_phenotype.txt ./monarch-owlsim-data/data/Cases/UDP_case_phenotype.txt
                                 mv Hs_case_labels.txt ./monarch-owlsim-data/data/Cases/UDP_case_labels.txt
 
-                                ./scripts/golr_exporter.py  --taxon Hs --subject_category disease --object_category phenotype --dev 
+                                ./scripts/golr_exporter.py  --taxon Hs --subject_category disease --object_category phenotype --dev
                                 mv Hs_* ./monarch-owlsim-data/data/Homo_sapiens/
 
                                 ./scripts/golr_exporter.py  --taxon Hs --subject_category gene --object_category phenotype --dev
@@ -437,12 +437,12 @@ pipeline {
 
                                 # start owlsim
                                 ssh monarch@$MONARCH_APP_BETA "sudo supervisorctl start owlsim"
-                                
+
                                 scp ic-cache.owl monarch@$MONARCH_DATA_FS:/var/www/data/owlsim/
                                 scp owlsim.cache monarch@$MONARCH_DATA_FS:/var/www/data/owlsim/
                                 scp all.owl monarch@$MONARCH_DATA_FS:/var/www/data/owlsim/
                                 cd .. && scp -r ./data monarch@$MONARCH_DATA_FS:/var/www/data/owlsim/
-                                
+
                                 sleep 900
                                 curl https://beta.monarchinitiative.org/owlsim/getAttributeInformationProfile
                             '''
@@ -463,7 +463,7 @@ pipeline {
                                 mkdir out
                                 venv/bin/python3 ./scripts/dump-data.py --out ./out/ --config ./conf/data-dump-conf.yaml
                                 cd out
-                                
+
                                 for directory in */ ; do
                                   cd $directory
                                   for file in ./* ; do
