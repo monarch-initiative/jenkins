@@ -60,6 +60,7 @@ pipeline {
                                 cd ./data/
                                 $WGET --accept ".nt" $BETA/rdf/
                                 $WGET $BETA/owl/
+                                chmod a+r *
                                 cd -
                                 
                                 SCIGRAPH_DIR=$WORKSPACE/load-scigraph-data-on-dev
