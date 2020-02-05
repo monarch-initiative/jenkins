@@ -50,14 +50,16 @@ pipeline {
                             )
                             sh '''
                                 git clone https://github.com/monarch-initiative/monarch-cypher-queries.git monarch-cypher-queries
-                                
+
+                                BETA="https://archive.monarchinitiative.org/beta"
+                                WGET="wget --recursive --no-parent --no-verbose --no-host-directories --level=1 --reject 'index.html'"
                                 # generate config files
-                                ./conf/build-load-conf.sh data 'https://archive.monarchinitiative.org/beta/translationtable/curie_map.yaml'
-                                ./conf/build-service-conf.sh data 'https://archive.monarchinitiative.org/beta/translationtable/curie_map.yaml'
+                                ./conf/build-load-conf.sh data "$BETA/translationtable/curie_map.yaml"
+                                ./conf/build-service-conf.sh data "$BETA/translationtable/curie_map.yaml"
                                 
                                 cd ./data/
-                                wget -r -l1 -nH --no-parent -R "index.html*" https://archive.monarchinitiative.org/beta/rdf/*.nt
-                                wget -r -l1 -nH --no-parent -R "index.html*" https://archive.monarchinitiative.org/beta/owl/
+                                $WGET --accept ".nt" $BETA/rdf/
+                                $WGET $BETA/owl/
                                 cd -
                                 
                                 SCIGRAPH_DIR=$WORKSPACE/load-scigraph-data-on-dev
@@ -82,14 +84,17 @@ pipeline {
                                 sleep 60
 
                                 # delete owl:Nothing edges and node
-                                cat $SCIGRAPH_DIR/monarch-cypher-queries/src/main/cypher/kg-transform/del-nothing.cql | /opt/neo4j/bin/cypher-shell -a bolt://localhost:7687
+                                cat $SCIGRAPH_DIR/monarch-cypher-queries/src/main/cypher/kg-transform/del-nothing.cql |
+                                    /opt/neo4j/bin/cypher-shell -a bolt://localhost:7687
 
                                 # add variant labels
-                                cat $SCIGRAPH_DIR/monarch-cypher-queries/src/main/cypher/kg-transform/add-variant-label.cql | /opt/neo4j/bin/cypher-shell -a bolt://localhost:7687
+                                cat $SCIGRAPH_DIR/monarch-cypher-queries/src/main/cypher/kg-transform/add-variant-label.cql |
+                                    /opt/neo4j/bin/cypher-shell -a bolt://localhost:7687
 
                                 # remove subClassOf cycles for phenotypes
                                 # https://github.com/monarch-initiative/monarch-ontology/issues/21
-                                cat $SCIGRAPH_DIR/monarch-cypher-queries/src/main/cypher/kg-transform/del-subclass-cycles.cql | /opt/neo4j/bin/cypher-shell -a bolt://localhost:7687
+                                cat $SCIGRAPH_DIR/monarch-cypher-queries/src/main/cypher/kg-transform/del-subclass-cycles.cql |
+                                    /opt/neo4j/bin/cypher-shell -a bolt://localhost:7687
                                    
                                 # stop neo4j
                                 /opt/neo4j/bin/neo4j stop
@@ -170,11 +175,13 @@ pipeline {
                                 sleep 60
 
                                 # delete owl:Nothing edges and node
-                                cat $SCIGRAPH_DIR/monarch-cypher-queries/src/main/cypher/kg-transform/del-nothing.cql | /opt/neo4j/bin/cypher-shell -a bolt://localhost:7687
+                                cat $SCIGRAPH_DIR/monarch-cypher-queries/src/main/cypher/kg-transform/del-nothing.cql |
+                                    /opt/neo4j/bin/cypher-shell -a bolt://localhost:7687
 
                                 # remove subClassOf cycles for phenotypes 
                                 # https://github.com/monarch-initiative/monarch-ontology/issues/21
-                                cat $SCIGRAPH_DIR/monarch-cypher-queries/src/main/cypher/kg-transform/del-subclass-cycles.cql | /opt/neo4j/bin/cypher-shell -a bolt://localhost:7687
+                                cat $SCIGRAPH_DIR/monarch-cypher-queries/src/main/cypher/kg-transform/del-subclass-cycles.cql |
+                                    /opt/neo4j/bin/cypher-shell -a bolt://localhost:7687
 
                                 # stop neo4j
                                 /opt/neo4j/bin/neo4j stop
@@ -341,7 +348,9 @@ pipeline {
 
                                 mv ./monarch-diff.md ./$directory/monarch-diff-"${timestamp}".md && mv ./monarch-diff.html ./$directory/monarch-diff-"${timestamp}".html
                                 
-                                grep SEVERE /var/lib/jenkins/jobs/monarch-data-pipeline/builds/$BUILD_NUMBER/log | perl -e '$pos; while(<>){chomp; if ($_ =~ m/.*clique.*/){ $pos = 1;} elsif ($pos == 1){ $_ =~ s/SEVERE: //; print "\\n$_"; $pos=2;} elsif($pos == 2){ $_ =~ s/SEVERE: //; print "\\t$_";}}' | sed '/^$/d' > ./data-diff-"${timestamp}"/clique-warnings.tsv
+                                grep SEVERE /var/lib/jenkins/jobs/monarch-data-pipeline/builds/$BUILD_NUMBER/log |
+                                    perl -e '$pos; while(<>){chomp; if ($_ =~ m/.*clique.*/){ $pos = 1;} elsif ($pos == 1){ $_ =~ s/SEVERE: //; print "\\n$_"; $pos=2;} elsif($pos == 2){ $_ =~ s/SEVERE: //; print "\\t$_";}}' |
+                                    sed '/^$/d' > ./data-diff-"${timestamp}"/clique-warnings.tsv
 
                                 scp -r ./$directory monarch@$MONARCH_DATA_FS:/var/www/data/qc/
                             '''
