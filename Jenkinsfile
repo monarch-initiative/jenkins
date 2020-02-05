@@ -60,7 +60,7 @@ pipeline {
                                 $WGET --accept ".nt" $BETA/rdf/
                                 $WGET $BETA/owl/
                                 chmod a+r *
-                                cd -
+                                cd ..
 
                                 SCIGRAPH_DIR=$WORKSPACE/load-scigraph-data-on-dev
 
@@ -150,8 +150,13 @@ pipeline {
                                 git clone https://github.com/monarch-initiative/monarch-cypher-queries.git monarch-cypher-queries
 
                                 # generate config files
-                                ./conf/build-load-conf.sh ontology 'https://archive.monarchinitiative.org/201911/translationtable/curie_map.yaml'
-                                ./conf/build-service-conf.sh ontology 'https://archive.monarchinitiative.org/201911/translationtable/curie_map.yaml'
+                                ./conf/build-load-conf.sh ontology "$BETA/translationtable/curie_map.yaml"
+                                ./conf/build-service-conf.sh ontology "$BETA/translationtable/curie_map.yaml"
+
+                                cd ./data/
+                                $WGET $BETA/owl/
+                                chmod a+r *
+                                cd ..
 
                                 SCIGRAPH_DIR=$WORKSPACE/load-scigraph-ontology-on-dev
 
