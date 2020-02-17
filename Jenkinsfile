@@ -38,11 +38,13 @@ pipeline {
     stages {
 
         stage('Load SciGraph instances') {
+            agent { 
+                label 'high_mem'
+            }
             steps {
                 parallel(
                     "load scigraph data on dev": {
                         dir('./load-scigraph-data-on-dev') {
-                            sh 'sudo rm -rf ./data/'
                             deleteDir()
                         }
                         dir('./load-scigraph-data-on-dev') {
@@ -67,12 +69,9 @@ pipeline {
                                 docker build -t scigraph-data .
 
                                 docker run \\
-                                    -v $SCIGRAPH_DIR/data:/data \\
-                                    -v $SCIGRAPH_DIR/conf:/scigraph/conf \\
+                                    --volume $SCIGRAPH_DIR/data:/data \\
+                                    --volume $SCIGRAPH_DIR/conf:/scigraph/conf \\
                                     scigraph-data load-scigraph monarchLoadConfiguration.yaml
-
-                                # change ownership from root to jenkins
-                                sudo chown -R jenkins:jenkins $SCIGRAPH_DIR/data
 
                                 # move graph to expected neo4j dir structure
                                 mkdir -p $SCIGRAPH_DIR/data/databases/graph.db
@@ -131,16 +130,13 @@ pipeline {
                                 # clean up residual docker images
                                 docker rm -v $(docker ps -a -q -f status=exited) || true
                                 docker rmi $(docker images -f 'dangling=true' -q) || true
-
-                                # remove graph
-                                rm -rf $SCIGRAPH_DIR/data/
                             '''
                         }
                     },
                     "load scigraph ontology on dev": {
                         dir('./load-scigraph-ontology-on-dev') {
-                            sh 'sudo rm -rf ./data/'
-                            deleteDir()}
+                            deleteDir()
+                        }
                         dir('./load-scigraph-ontology-on-dev') {
                             git(
                                 url: 'https://github.com/monarch-initiative/scigraph-docker',
@@ -163,12 +159,9 @@ pipeline {
                                 docker build -t scigraph .
 
                                 docker run \\
-                                    -v $SCIGRAPH_DIR/data:/data \\
-                                    -v $SCIGRAPH_DIR/conf:/scigraph/conf \\
+                                    --volume $SCIGRAPH_DIR/data:/data \\
+                                    --volume $SCIGRAPH_DIR/conf:/scigraph/conf \\
                                     scigraph load-scigraph monarchLoadConfiguration.yaml
-
-                                # change ownership from root to jenkins
-                                sudo chown -R jenkins:jenkins $SCIGRAPH_DIR/data
 
                                 # move graph to expected neo4j dir structure
                                 mkdir -p $SCIGRAPH_DIR/data/databases/graph.db
@@ -220,9 +213,6 @@ pipeline {
                                 # clean up residual docker images
                                 docker rm -v $(docker ps -a -q -f status=exited) || true
                                 docker rmi $(docker images -f 'dangling=true' -q) || true
-
-                                # remove graph
-                                rm -rf $SCIGRAPH_DIR/data/
                             '''
                         }
                     }
@@ -231,27 +221,38 @@ pipeline {
         }
 
         stage('Create and load golr core from scigraph dev') {
+            agent { 
+                label 'high_mem'
+            }
             steps {
-                sh '''
-                    REMOTE_DIR="/disk/vmpartition/data/golr-docker"
+                dir('./load-golr-core') {
+                    deleteDir()
+                }
+                dir('./load-golr-core') {
+                    git(
+                        url: 'https://github.com/monarch-initiative/solr-docker-monarch-golr',
+                        branch: 'master'
+                    )
+                    sh '''
+                        SOLR_DIR=$WORKSPACE/load-golr-core
+                        mkdir solr
+                        
+                        docker build --no-cache -t solr-docker-monarch-golr .
+                        docker run -v $SOLR_DIR/solr:/solr solr-docker-monarch-golr
 
-                    ssh monarch@$MONARCH4 "sudo rm -rf $REMOTE_DIR/solr-docker-monarch-golr"
-                    ssh monarch@$MONARCH4 "cd $REMOTE_DIR && git clone https://github.com/monarch-initiative/solr-docker-monarch-golr.git"
-                    ssh monarch@$MONARCH4 "cd $REMOTE_DIR/solr-docker-monarch-golr && docker build --no-cache -t solr-docker-monarch-golr ."
-                    ssh monarch@$MONARCH4 "cd $REMOTE_DIR/solr-docker-monarch-golr && docker run -v $REMOTE_DIR/solr-docker-monarch-golr/solr:/solr solr-docker-monarch-golr"
+                        # stop solr
+                        ssh monarch@$SOLR_DEV "sudo service solr stop"
 
-                    # stop solr
-                    ssh monarch@$SOLR_DEV "sudo service solr stop"
+                        ssh monarch@$SOLR_DEV "sudo rm -rf /var/solr/data/golr"
+                        ssh monarch@$SOLR_DEV "sudo chown monarch:monarch /mnt/data/jenkins/monarch-data-pipeline/load-golr-core/solr/golr.tar"
+                        ssh monarch@$SOLR_DEV "cd /var/solr/data && sudo tar xfv /mnt/data/golr-docker/solr-docker-monarch-golr/solr/golr.tar"
 
-                    ssh monarch@$SOLR_DEV "sudo rm -rf /var/solr/data/golr"
-                    ssh monarch@$SOLR_DEV "sudo chown monarch:monarch /mnt/data/golr-docker/solr-docker-monarch-golr/solr/golr.tar"
-                    ssh monarch@$SOLR_DEV "cd /var/solr/data && sudo tar xfv /mnt/data/golr-docker/solr-docker-monarch-golr/solr/golr.tar"
+                        ssh monarch@$SOLR_DEV "sudo chown -R solr:solr /var/solr/data/golr"
 
-                    ssh monarch@$SOLR_DEV "sudo chown -R solr:solr /var/solr/data/golr"
-
-                    # start solr
-                    ssh monarch@$SOLR_DEV "sudo service solr start"
-                '''
+                        # start solr
+                        ssh monarch@$SOLR_DEV "sudo service solr start"
+                    '''
+                }
             }
         }
 
@@ -259,7 +260,9 @@ pipeline {
             steps {
                 parallel(
                     "Create and load search core from scigraph dev": {
-                        dir('./create-and-load-search-core') {deleteDir()}
+                        dir('./create-and-load-search-core') {
+                            deleteDir()
+                        }
                         dir('./create-and-load-search-core') {
                             git(
                                 url: 'https://github.com/monarch-initiative/solr-docker-monarch-search.git',
@@ -293,7 +296,9 @@ pipeline {
                         }
                     },
                     "create and load feature location core from scigraph dev": {
-                        dir('./create-and-load-feature-location-core') {deleteDir()}
+                        dir('./create-and-load-feature-location-core') {
+                            deleteDir()
+                        }
                         dir('./create-and-load-feature-location-core') {
                             git(
                                 url: 'https://github.com/monarch-initiative/solr-docker-monarch-feature-location.git',
@@ -335,7 +340,9 @@ pipeline {
             steps {
                 parallel(
                     "diff and qc": {
-                        dir('./diff-and-qc') {deleteDir()}
+                        dir('./diff-and-qc') {
+                            deleteDir()
+                        }
                         dir('./diff-and-qc') {
                             git(
                                 url: 'https://github.com/monarch-initiative/release-utils.git',
@@ -378,7 +385,9 @@ pipeline {
                                 branch: 'master'
                             )
                         }
-                        dir('./create-owlsim-files-on-dev/monarch-owlsim-data') {deleteDir()}
+                        dir('./create-owlsim-files-on-dev/monarch-owlsim-data') {
+                            deleteDir()
+                        }
                         dir('./create-owlsim-files-on-dev/monarch-owlsim-data') {
                         git(
                                 url: 'https://github.com/monarch-initiative/monarch-owlsim-data.git',
@@ -453,7 +462,9 @@ pipeline {
                         }
                     },
                     "make monarch tsvs": {
-                        dir('./make-monarch-tsvs') {deleteDir()}
+                        dir('./make-monarch-tsvs') {
+                            deleteDir()
+                        }
                         dir('./make-monarch-tsvs') {
                             git(
                                 url: 'https://github.com/monarch-initiative/release-utils.git',
