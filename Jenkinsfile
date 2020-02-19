@@ -96,6 +96,7 @@ pipeline {
                                     /opt/neo4j/bin/cypher-shell -a bolt://localhost:7687
 
                                 # stop neo4j
+                                export NEO4J_SHUTDOWN_TIMEOUT=300
                                 /opt/neo4j/bin/neo4j stop
 
                                 # move data back
@@ -182,6 +183,7 @@ pipeline {
                                     /opt/neo4j/bin/cypher-shell -a bolt://localhost:7687
 
                                 # stop neo4j
+                                export NEO4J_SHUTDOWN_TIMEOUT=300
                                 /opt/neo4j/bin/neo4j stop
 
                                 # move data back
