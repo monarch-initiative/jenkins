@@ -96,8 +96,7 @@ pipeline {
                                     /opt/neo4j/bin/cypher-shell -a bolt://localhost:7687
 
                                 # stop neo4j
-                                export NEO4J_SHUTDOWN_TIMEOUT=600
-                                /opt/neo4j/bin/neo4j stop
+                                /opt/neo4j/bin/neo4j stop &
 
                                 # move data back
                                 mv $SCIGRAPH_DIR/data/databases/graph.db/* $SCIGRAPH_DIR/data/graph/
@@ -183,8 +182,7 @@ pipeline {
                                     /opt/neo4j/bin/cypher-shell -a bolt://localhost:7687
 
                                 # stop neo4j
-                                export NEO4J_SHUTDOWN_TIMEOUT=600
-                                /opt/neo4j/bin/neo4j stop
+                                /opt/neo4j/bin/neo4j stop &
 
                                 # move data back
                                 mv $SCIGRAPH_DIR/data/databases/graph.db/* $SCIGRAPH_DIR/data/graph/
