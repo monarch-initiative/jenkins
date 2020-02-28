@@ -247,7 +247,7 @@ pipeline {
 
                         ssh monarch@$SOLR_DEV "sudo rm -rf /var/solr/data/golr"
                         ssh monarch@$SOLR_DEV "sudo chown monarch:monarch /mnt/data/jenkins/monarch-data-pipeline/load-golr-core/solr/golr.tar"
-                        ssh monarch@$SOLR_DEV "cd /var/solr/data && sudo tar xfv /mnt/data/golr-docker/solr-docker-monarch-golr/solr/golr.tar"
+                        ssh monarch@$SOLR_DEV "cd /var/solr/data && sudo tar xfv /mnt/data/jenkins/monarch-data-pipeline/load-golr-core/solr/golr.tar"
 
                         ssh monarch@$SOLR_DEV "sudo chown -R solr:solr /var/solr/data/golr"
 
