@@ -80,7 +80,7 @@ pipeline {
 
                                 # start neo4j
                                 /opt/neo4j/bin/neo4j start
-                                sleep 60
+                                sleep 120
 
                                 # delete owl:Nothing edges and node
                                 cat $SCIGRAPH_DIR/monarch-cypher-queries/src/main/cypher/kg-transform/del-nothing.cql |
@@ -171,7 +171,7 @@ pipeline {
 
                                 # start neo4j
                                 /opt/neo4j/bin/neo4j start
-                                sleep 60
+                                sleep 120
 
                                 # delete owl:Nothing edges and node
                                 cat $SCIGRAPH_DIR/monarch-cypher-queries/src/main/cypher/kg-transform/del-nothing.cql |
