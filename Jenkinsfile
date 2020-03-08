@@ -459,7 +459,7 @@ pipeline {
                                 cd .. && scp -r ./data monarch@$MONARCH_DATA_FS:/var/www/data/owlsim/
 
                                 sleep 900
-                                curl https://beta.monarchinitiative.org/owlsim/getAttributeInformationProfile
+                                curl https://beta.monarchinitiative.org/owlsim/getAttributeInformationProfile?r=HP:0000924&r=HP:0000707&r=HP:0000152&r=HP:0001574&r=HP:0000478&r=HP:0001626&r=HP:0001939&r=HP:0000119&r=HP:0025031&r=HP:0002664&r=HP:0001871&r=HP:0002715&r=HP:0000818&r=HP:0003011&r=HP:0002086&r=HP:0000598&r=HP:0003549&r=HP:0001197&r=HP:0001507&r=HP:0000769
                             '''
                         }
                     },
