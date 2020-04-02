@@ -59,7 +59,7 @@ pipeline {
                                 ./conf/build-service-conf.sh data "$BETA/translationtable/curie_map.yaml"
 
                                 cd ./data/
-                                $WGET --accept ".nt" $BETA/rdf/
+                                $WGET --accept ".nt","dipper_rdf_dataset.ttl" $BETA/rdf/
                                 $WGET $BETA/owl/
                                 chmod a+r *
                                 cd ..
