@@ -429,8 +429,7 @@ pipeline {
 
                                 mkdir -p bin
                                 export PATH=$PATH:$PWD/bin
-                                wget http://build.berkeleybop.org/userContent/owltools/owltools -O bin/owltools
-                                wget http://build.berkeleybop.org/userContent/owltools/owltools-runner-all.jar -O bin/owltools-runner-all.jar
+                                wget http://current.geneontology.org/bin/owltools -O bin/owltools
                                 chmod 755 bin/owltools
 
                                 cd server
