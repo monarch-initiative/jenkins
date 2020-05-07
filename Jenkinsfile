@@ -50,7 +50,7 @@ pipeline {
                         dir('./load-scigraph-data-on-dev') {
                             git(
                                 url: 'https://github.com/monarch-initiative/scigraph-docker',
-                                branch: 'master'
+                                branch: 'test'
                             )
                             sh '''
                                 git clone https://github.com/monarch-initiative/monarch-cypher-queries.git monarch-cypher-queries
@@ -71,6 +71,7 @@ pipeline {
                                 docker run \\
                                     --volume $SCIGRAPH_DIR/data:/data \\
                                     --volume $SCIGRAPH_DIR/conf:/scigraph/conf \\
+                                    --user jenkins \\
                                     scigraph-data load-scigraph monarchLoadConfiguration.yaml
 
                                 # move graph to expected neo4j dir structure
@@ -141,7 +142,7 @@ pipeline {
                         dir('./load-scigraph-ontology-on-dev') {
                             git(
                                 url: 'https://github.com/monarch-initiative/scigraph-docker',
-                                branch: 'master'
+                                branch: 'test'
                             )
                             sh '''
                                 git clone https://github.com/monarch-initiative/monarch-cypher-queries.git monarch-cypher-queries
@@ -162,6 +163,7 @@ pipeline {
                                 docker run \\
                                     --volume $SCIGRAPH_DIR/data:/data \\
                                     --volume $SCIGRAPH_DIR/conf:/scigraph/conf \\
+                                    --user jenkins \\
                                     scigraph load-scigraph monarchLoadConfiguration.yaml
 
                                 # move graph to expected neo4j dir structure
