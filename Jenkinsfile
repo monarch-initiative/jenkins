@@ -235,14 +235,14 @@ pipeline {
                 dir('./load-golr-core') {
                     git(
                         url: 'https://github.com/monarch-initiative/solr-docker-monarch-golr',
-                        branch: 'master'
+                        branch: 'test'
                     )
                     sh '''
                         SOLR_DIR=$WORKSPACE/load-golr-core
                         mkdir solr
                         
                         docker build --no-cache -t solr-docker-monarch-golr .
-                        docker run -v $SOLR_DIR/solr:/solr solr-docker-monarch-golr
+                        docker run --user jenkins -v $SOLR_DIR/solr:/solr solr-docker-monarch-golr
 
                         # stop solr
                         ssh monarch@$SOLR_DEV "sudo service solr stop"
