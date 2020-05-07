@@ -50,7 +50,7 @@ pipeline {
                         dir('./load-scigraph-data-on-dev') {
                             git(
                                 url: 'https://github.com/monarch-initiative/scigraph-docker',
-                                branch: 'test'
+                                branch: 'master'
                             )
                             sh '''
                                 git clone https://github.com/monarch-initiative/monarch-cypher-queries.git monarch-cypher-queries
@@ -71,7 +71,6 @@ pipeline {
                                 docker run \\
                                     --volume $SCIGRAPH_DIR/data:/data \\
                                     --volume $SCIGRAPH_DIR/conf:/scigraph/conf \\
-                                    --user jenkins \\
                                     scigraph-data load-scigraph monarchLoadConfiguration.yaml
 
                                 # move graph to expected neo4j dir structure
@@ -142,7 +141,7 @@ pipeline {
                         dir('./load-scigraph-ontology-on-dev') {
                             git(
                                 url: 'https://github.com/monarch-initiative/scigraph-docker',
-                                branch: 'test'
+                                branch: 'master'
                             )
                             sh '''
                                 git clone https://github.com/monarch-initiative/monarch-cypher-queries.git monarch-cypher-queries
@@ -163,7 +162,6 @@ pipeline {
                                 docker run \\
                                     --volume $SCIGRAPH_DIR/data:/data \\
                                     --volume $SCIGRAPH_DIR/conf:/scigraph/conf \\
-                                    --user jenkins \\
                                     scigraph load-scigraph monarchLoadConfiguration.yaml
 
                                 # move graph to expected neo4j dir structure
@@ -235,14 +233,14 @@ pipeline {
                 dir('./load-golr-core') {
                     git(
                         url: 'https://github.com/monarch-initiative/solr-docker-monarch-golr',
-                        branch: 'test'
+                        branch: 'master'
                     )
                     sh '''
                         SOLR_DIR=$WORKSPACE/load-golr-core
                         mkdir solr
                         
                         docker build --no-cache -t solr-docker-monarch-golr .
-                        docker run --user jenkins -v $SOLR_DIR/solr:/solr solr-docker-monarch-golr
+                        docker run -v $SOLR_DIR/solr:/solr solr-docker-monarch-golr
 
                         # stop solr
                         ssh monarch@$SOLR_DEV "sudo service solr stop"
