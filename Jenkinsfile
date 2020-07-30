@@ -358,7 +358,7 @@ pipeline {
                                 virtualenv -p /usr/bin/python3 venv
                                 venv/bin/pip install -r requirements.txt
                                 export PYTHONPATH=.:$PYTHONPATH
-                                venv/bin/python3 ./scripts/monarch-count-diff.py --config ./conf/monarch-qc.yaml -t 100 -q
+                                venv/bin/python3 ./scripts/monarch-count-diff.py --config ./conf/monarch-qc.yaml -t 10 -q
 
                                 mv ./monarch-diff.md ./$directory/monarch-diff-"${timestamp}".md && mv ./monarch-diff.html ./$directory/monarch-diff-"${timestamp}".html
 
