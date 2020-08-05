@@ -468,6 +468,7 @@ pipeline {
                                   >&2 echo "owlsim loading"
                                   sleep 15
                                 done
+                                curl --silent --show-error --output /dev/null ${categories}
                             '''
                         }
                     },
