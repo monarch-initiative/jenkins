@@ -358,9 +358,7 @@ pipeline {
                                 virtualenv -p /usr/bin/python3 venv
                                 venv/bin/pip install -r requirements.txt
                                 export PYTHONPATH=.:$PYTHONPATH
-                                venv/bin/python3 ./scripts/monarch-count-diff.py --config ./conf/monarch-qc.yaml -t 10
-
-                                mv ./monarch-diff.md ./$directory/monarch-diff-"${timestamp}".md && mv ./monarch-diff.html ./$directory/monarch-diff-"${timestamp}".html
+                                venv/bin/python3 ./scripts/monarch-count-diff.py --config ./conf/monarch-qc.yaml -t 10 --out $directory
 
                                 grep SEVERE /var/lib/jenkins/jobs/monarch-data-pipeline/builds/$BUILD_NUMBER/log |
                                     perl -e '$pos; while(<>){chomp; if ($_ =~ m/.*clique.*/){ $pos = 1;} elsif ($pos == 1){ $_ =~ s/SEVERE: //; print "\\n$_"; $pos=2;} elsif($pos == 2){ $_ =~ s/SEVERE: //; print "\\t$_";}}' |
