@@ -485,13 +485,13 @@ pipeline {
                                 export PYTHONPATH=.:$PYTHONPATH
 
                                 mkdir out
-                                venv/bin/python3 ./scripts/dump-data.py --out ./out/ --config ./conf/data-dump-conf.yaml
+                                venv/bin/python3 ./scripts/dump-data.py --solr "http://monarch-solr6-dev.cgrb.oregonstate.local/solr/golr/select" --out ./out/ --config ./conf/data-dump-conf.yaml
                                 cd out
 
                                 for directory in */ ; do
                                   cd $directory
                                   for file in ./* ; do
-                                    grep -v 'well-known/gen' $file > tmp.tsv && mv tmp.tsv $file || rm $file tmp.tsv
+                                    zgrep -v 'well-known/gen' $file > tmp.tsv && mv tmp.tsv $file || rm $file tmp.tsv
                                   done
                                   md5sum * > md5sums && cd ..
                                 done
