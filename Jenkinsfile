@@ -491,7 +491,7 @@ pipeline {
                                 for directory in */ ; do
                                   cd $directory
                                   for file in ./* ; do
-                                    zgrep -v 'well-known/gen' $file > tmp.tsv && mv tmp.tsv $file || rm $file tmp.tsv
+                                    zgrep -v 'well-known/gen' $file > tmp.tsv && gzip tmp.tsv && mv tmp.tsv.gz $file
                                   done
                                   md5sum * > md5sums && cd ..
                                 done
