@@ -253,12 +253,6 @@ pipeline {
 
                         # start solr
                         ssh monarch@$SOLR_DEV "sudo service solr start"
-                        
-                        sleep 120
-                        
-                        # Optimize
-                        ssh monarch@$SOLR_DEV "curl http://localhost:8983/solr/golr/update?optimize=true"
-                        
                     '''
                 }
             }
