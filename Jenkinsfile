@@ -385,8 +385,7 @@ pipeline {
                     "create owlsim files on dev": {
                         dir('./create-owlsim-files-on-dev') {
                             git(
-                                url: 'https://github.com/monarch-initiative/configs.git',
-                                credentialsId: '3ca28d15-5fa8-46b1-a2ac-a5a483694f5b',
+                                url: 'git@github.com:monarch-initiative/configs.git',
                                 branch: 'master'
                             )
                         }
