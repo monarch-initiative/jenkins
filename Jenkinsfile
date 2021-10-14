@@ -420,6 +420,9 @@ pipeline {
 
                                 ./scripts/golr_exporter.py  --taxon Ce --subject_category gene --object_category phenotype --dev
                                 mv Ce_* ./monarch-owlsim-data/data/Caenorhabditis_elegans/
+                                
+                                ./scripts/golr_exporter.py  --taxon Xe --subject_category gene --object_category phenotype --dev
+                                mv Xe_* ./monarch-owlsim-data/data/Xenopus/
 
                                 ./scripts/golr_exporter.py  --taxon Hs --subject_category publication --object_category phenotype --dev
                                 grep 'PMID' Hs_publication_phenotype.txt > Pub_phenotype.txt
